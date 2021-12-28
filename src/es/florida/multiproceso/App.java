@@ -3,13 +3,16 @@ package es.florida.multiproceso;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 public class App {
 
+	public static ArrayList<String> listaCompletaNombresNEO = new ArrayList<String>();
 	public static String[] nombreNEO;
 	public static double[][] informacionNEO;
+	public static double[] probabilidades;
 	
 	public static void main(String[] args) {
 		
@@ -20,7 +23,7 @@ public class App {
 		
 		// Leer el fichero para contar cuantos NEO's hay en el
 		int cantidadNEO = ContarNumeroNEOs( nombreFicheroAnalizar );
-		
+		probabilidades = new double[cantidadNEO];		
 		
 		// Dividir el numero de NEO's por la cantidad de nucleos disponibles en el procesador
 		int nucleosDisponibles = Runtime.getRuntime().availableProcessors();
@@ -57,6 +60,37 @@ public class App {
 		GestionarInformacionNEOs( nombreFicheroAnalizar, NEOsPorNucleo, ultimoNucleo, NEOsPorNucleoExactos, nucleosDisponibles );
 		
 		
+		// Comprobar que los procesos han terminado su tarea
+		boolean finalProcesos = false;
+		while( !finalProcesos )
+		{
+			try
+			{
+				GetResultadosFicheros();
+				finalProcesos = true;
+			}
+			catch( Exception e )
+			{
+				
+			}
+		}
+		
+		NotificarPeligro();
+		
+		
+	}
+		
+		
+		
+		// Lee los ficheros creados uno por uno y almacena la informacion de cada uno en el array probabilidades
+		//GetResultadosFicheros();
+		
+		
+		// Muestra al usuario si hay o no hay peligro
+		//NotificarPeligro();
+		
+		
+		
 	
 	// Leer el fichero, guardar su informacion en una lista
 	
@@ -72,7 +106,7 @@ public class App {
 	// se mostrara como salida la probabilidad de colision del neo con la tierra y si es mayor del 10% lanzara alerta mundial, si es menor tranquilidad
 	// se mostrara como salida tambien el tiempo de ejecuccion del programa
 
-	}
+	
 	
 	public static int ContarNumeroNEOs( String nombreFichero ) 
 	{
@@ -92,7 +126,7 @@ public class App {
 			}
 			br.close();
 			
-			System.out.println( "ContarNUmeroNEOs completo" );
+			System.out.println( "ContarNumeroNEOs completo" );
 			
 			return cantidadNEO;
 		}
@@ -155,7 +189,7 @@ public class App {
 			
 			br.close();
 			
-			System.out.println( "Numero de nucleos completos" + contadorNucleosLlenos );
+			System.out.println( "Numero de combinaciones de procesos lanzados " + contadorNucleosLlenos );
 			
 			System.out.println( "GestionarInformacion completo" );
 			
@@ -193,10 +227,12 @@ public class App {
 			    command.add(String.valueOf(informacionNEO[0][i]));
 			    command.add(String.valueOf(informacionNEO[1][i]));
 			    
+			    
 			    ProcessBuilder builder = new ProcessBuilder(command); // Ensamblamos el codigo ( SERA EL COMANDO QUE QUEREMOS LANZAR COMO SI LO LANZARAMOS POR LA TERMINAL DE LINUX )
 
 				// Guarda el resultado de la probabilidad ( que es el proceso lanzado ) en un fichero pasandole la ruta por parametro--> Probabilidad devuelve un System.out.println() con la probabilidad calculada
 			    builder.redirectOutput(fichResultado);
+			    
 
 				// Lanza proceso
 				builder.start();
@@ -228,9 +264,46 @@ public class App {
 			informacionNEO[0][posicionAGuardar] = Double.valueOf(elementosLinea[1]);
 			informacionNEO[1][posicionAGuardar] = Double.valueOf(elementosLinea[2]);
 			
+			listaCompletaNombresNEO.add(elementosLinea[0]);
+			
 			posicionAGuardar++;
 		}
 		
 		System.out.println( "GuardarInformacion completo" );
+	}
+	
+	
+	public static void GetResultadosFicheros() throws Exception
+	{	
+		double probabilidad = 0;
+		for( int i = 0; i < listaCompletaNombresNEO.size(); i++ ) 
+		{				
+			FileInputStream fichero = new FileInputStream(listaCompletaNombresNEO.get(i));
+			InputStreamReader fir = new InputStreamReader(fichero);
+			BufferedReader br = new BufferedReader(fir);
+			
+			String linea = br.readLine();
+			probabilidad = Double.parseDouble(linea);
+			
+			probabilidades[i] = probabilidad;
+		}
+	}
+	
+	
+	public static void NotificarPeligro()
+	{
+		for( int i = 0 ; i < listaCompletaNombresNEO.size(); i++ )
+		{
+			System.out.print( "> NEO : " + listaCompletaNombresNEO.get(i) + " >> " );
+			
+			if( probabilidades[i] > 10 )
+			{
+				System.out.println( "P E L I G R O DE COLISION !!! | LA RAZA HUMANA ESTA EN PELIGRO DE EXTINCION" );
+			}
+			else
+			{
+				System.out.println( "No hay peligro | Podemos dormir tranquilos" );
+			}
+		}
 	}
 }
