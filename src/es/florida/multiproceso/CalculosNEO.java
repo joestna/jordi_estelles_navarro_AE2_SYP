@@ -12,6 +12,8 @@ public class CalculosNEO {
 		System.out.println( resultado );
 	}
 	
+	
+	// Calcula la probabilidad de colision del NEO contra la tierra
 	public static double CalculoProbabilidad( double posicionNEO, double velocidadNEO )
 	{
 		double posicionTierra = 1;

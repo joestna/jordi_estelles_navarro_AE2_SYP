@@ -29,8 +29,11 @@ public class App {
 		int nucleosDisponibles = Runtime.getRuntime().availableProcessors();
 		int NEOsPorNucleo; //DEFINIR VARIABLES??
 		
+		
+		// Verificar si el numero de NEOs entre el numero de cores disponbles es par o inpar
+		// Si es impar el ultimo grupo de procesos lanzados sera menor
 		boolean NEOsPorNucleoExactos;
-		int ultimoNucleo = 0;
+		int ultimoGrupoProcesos = 0;
 		
 		if(cantidadNEO % nucleosDisponibles != 0)
 		{
@@ -39,7 +42,7 @@ public class App {
 			while(auxCantidadNEO % nucleosDisponibles != 0)
 			{
 				auxCantidadNEO--;
-				ultimoNucleo++;
+				ultimoGrupoProcesos++;
 			}
 			
 			NEOsPorNucleo = auxCantidadNEO / nucleosDisponibles;
@@ -56,8 +59,9 @@ public class App {
 		
 		System.out.println( "NucleosExactos completo" );
 		
-		// Volver a recorrer el fichero, segun los calculos anteriores y guardar la informacion de cada lista en las variables globales
-		GestionarInformacionNEOs( nombreFicheroAnalizar, NEOsPorNucleo, ultimoNucleo, NEOsPorNucleoExactos, nucleosDisponibles );
+		
+		// Volver a recorrer el fichero, segun los calculos anteriores y guardar la informacion de cada linea en las variables globales
+		GestionarInformacionNEOs( nombreFicheroAnalizar, NEOsPorNucleo, ultimoGrupoProcesos, NEOsPorNucleoExactos, nucleosDisponibles );
 		
 		
 		// Comprobar que los procesos han terminado su tarea
@@ -75,39 +79,13 @@ public class App {
 			}
 		}
 		
+		
+		// Generar una alerta dependiendo del peligro que supone el NEO
 		NotificarPeligro();
-		
-		
 	}
-		
-		
-		
-		// Lee los ficheros creados uno por uno y almacena la informacion de cada uno en el array probabilidades
-		//GetResultadosFicheros();
-		
-		
-		// Muestra al usuario si hay o no hay peligro
-		//NotificarPeligro();
-		
-		
-		
-	
-	// Leer el fichero, guardar su informacion en una lista
-	
-	// Dividir el numero de procesadores que tiene el procesador por el numero de lineas que hay en el fichero
-	
-	// Crear una lista que sera la informacion que se le pasara a cada proceso, dependiendo del numero de lineas que hay y el numero de procesadores
-	// 8 lineas, 4 procesadores = 2 lineas por procesador -> estas dos lineas las almacenare en una lista y le pasare la lista al proceso al crearlo
-	// de la lista principal se le pasaran las posiciones de las lineas que corresponden a cada procesador a la lista secundaria
-	
-	// hacer un for para crear el numero de procesos = numero de procesadores
-	
-	// procesar la informacion = guardar la informacion en un fichero independiente que se llamara como el NEO Procesado
-	// se mostrara como salida la probabilidad de colision del neo con la tierra y si es mayor del 10% lanzara alerta mundial, si es menor tranquilidad
-	// se mostrara como salida tambien el tiempo de ejecuccion del programa
-
 	
 	
+	// Cuenta el numero de NEOs en el fichero inicial
 	public static int ContarNumeroNEOs( String nombreFichero ) 
 	{
 		int cantidadNEO = 0;
@@ -139,7 +117,9 @@ public class App {
 	}
 	
 	
-	
+	// Utiliza la cantidad de cores disponibles y la cantidad de NEOs a gestionar
+	// Crea los bloques de neos que seran del numero de cores disponibles, guarda la informacion del grupo y lanza los procesos
+	// Se repite el proceso por numero de grupos que hayan salido de las operaciones de main
 	public static void GestionarInformacionNEOs( String nombreFichero, int NEOsPorNucleo, int ultimoNucleo, boolean NEOsPorNucleoExactos, int nucleosDisponibles)
 	{		
 		try
@@ -153,26 +133,26 @@ public class App {
 			BufferedReader br = new BufferedReader( fich );
 			String linea = br.readLine();
 			
-			int contadorNEOsPorNucleo = 0;
+			int contadorNEOs = 0;
 			int contadorNucleosLlenos = 0;
 			
 			while( linea != null )
 			{
 				NEOs.add(linea);
-				contadorNEOsPorNucleo++;
+				contadorNEOs++;
 				
-				if( contadorNEOsPorNucleo == nucleosDisponibles )
+				if( contadorNEOs == nucleosDisponibles )
 				{
 					GuardarInformacionNEOs( NEOs );
 					NEOs = new ArrayList<String>();
 
-					contadorNucleosLlenos++;
+					contadorNEOs++;
 					
 					LanzarProcesos(nucleosDisponibles);
 					
-					contadorNEOsPorNucleo = 0;
+					contadorNEOs = 0;
 				}
-				else if( contadorNucleosLlenos == NEOsPorNucleo -1 && contadorNEOsPorNucleo == ultimoNucleo && !NEOsPorNucleoExactos )
+				else if( contadorNucleosLlenos == NEOsPorNucleo -1 && contadorNEOs == ultimoNucleo && !NEOsPorNucleoExactos )
 				{
 					GuardarInformacionNEOs( NEOs );
 					NEOs = new ArrayList<String>();
@@ -181,7 +161,7 @@ public class App {
 					
 					LanzarProcesos(nucleosDisponibles);
 					
-					contadorNEOsPorNucleo = 0;
+					contadorNEOs = 0;
 				}
 			
 				linea = br.readLine();
@@ -203,17 +183,15 @@ public class App {
 	}
 	
 	
+	// Se lanzan los procesos y se redirige la salida del proceso a un fichero con el nombre del NEO
 	public static void LanzarProcesos( int contadorNEOsPorNucleo )
 	{
 		for( int i = 0; i < contadorNEOsPorNucleo; i++ )
 		{
-			// ' clase ' sera nuestro proceso ( el proceso lanzado sera la clase Probabilidad con su metodo main y sus funcionalidades)
-			// Paquete=package (es.florida.psp_neo) con la clase (Probabilidad)
-			// La clase probabilidad tiene un metodo main ( cuando se lanza es como lanzar un ejecutable ) | La clase en su main se invoca a ella misma y utiliza sus propios metodos sin depender de otras
 			String clase = "es.florida.multiproceso.CalculosNEO";
 			File fichResultado = new File(nombreNEO[i]);
+			
 			try {
-				// 
 				String javaHome = System.getProperty("java.home"); // Donde se ubica javahome en el ordenador
 			    String javaBin = javaHome + File.separator + "bin" + File.separator + "java"; // Donde esta el binario que ejecutara la aplicacion java ( el interprete de java )
 			    String classpath = System.getProperty("java.class.path"); // Donde esta el classpath que es una propiedad del java development kit JDK
@@ -238,20 +216,17 @@ public class App {
 				builder.start();
 				
 				System.out.println( "LanzarProcesos completo" );
-
-				/* EL SIGUIENTE CODIGO COMENTADO NO ES DE ESTE EJERCICIO */
-				/* builder.inheritIO().start(); */ // Con este codigo la salida por pantalla que mostraria el proceso en su contexto la mostraria aqui
-				/* Process.waitFor(); */ // Esperaria a que el proceso terminara para poder continuar con el codigo
 					
-			} catch (Exception e) {
+			}
+			catch (Exception e) 
+			{
 				e.printStackTrace();
 			}
 		}
-		
-		
 	}
 	
 	
+	// Se guarda la informacion en las variables globales del grupo de NEOs almacenados en la lista que dependeran del numero de cores disponibles
 	public static void GuardarInformacionNEOs( ArrayList<String> listaInformacion )
 	{	
 		int posicionAGuardar = 0;
@@ -273,6 +248,9 @@ public class App {
 	}
 	
 	
+	// Lee los ficheros creados a partir de los procesos con el nombre de cada uno de los NEO
+	// Estos ficheros contienen las probabilidades de colision del NEO con la tierra
+	// Las probabilidades se guardaran en el array global probabilidades
 	public static void GetResultadosFicheros() throws Exception
 	{	
 		double probabilidad = 0;
@@ -290,6 +268,7 @@ public class App {
 	}
 	
 	
+	// Recorre el array global probabilidades y lanza alertas segun la probabilidad de colision del NEO con la tierra
 	public static void NotificarPeligro()
 	{
 		for( int i = 0 ; i < listaCompletaNombresNEO.size(); i++ )
